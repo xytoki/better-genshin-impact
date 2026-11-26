@@ -1,0 +1,47 @@
+name: Export Test Release
+
+on:
+  push:
+    branches:
+      - test/kachina-new-pack
+    paths:
+      - .github/workflows/export-test-release.yml
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts from run 45842388311
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p out
+          gh run download 45842388311 -R ${{ github.repository }} \
+            -n BetterGI_Install \
+            -n BetterGI_Split \
+            -n BetterGI_OnlineInst \
+            -D out
+          ls -la out out/BetterGI_Install out/BetterGI_OnlineInst out/BetterGI_Split
+          (cd out/BetterGI_Split && zip -0 -r ../BetterGI_Split.0.67.99-test.1.zip .)
+          ls -lh out/BetterGI_Install/BetterGI.Install.0.67.99-test.1.exe \
+                 out/BetterGI_OnlineInst/BetterGI.update.exe \
+                 out/BetterGI_Split.0.67.99-test.1.zip
+
+      - name: Publish public prerelease 0.67.99-test.1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete 0.67.99-test.1 -R ${{ github.repository }} --yes --cleanup-tag || true
+          gh release create 0.67.99-test.1 \
+            -R ${{ github.repository }} \
+            --target ${{ github.sha }} \
+            --prerelease \
+            --title "BetterGI 0.67.99-test.1 (Kachina/DFS2 CI Test)" \
+            --notes "Temporary public prerelease exported from run 45842388311 for Kachina + DFS2 E2E validation." \
+            out/BetterGI_Install/BetterGI.Install.0.67.99-test.1.exe \
+            out/BetterGI_OnlineInst/BetterGI.update.exe \
+            out/BetterGI_Split.0.67.99-test.1.zip
