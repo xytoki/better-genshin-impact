@@ -190,7 +190,7 @@ jobs:
       - name: 📦 Gen Updater by kachina-builder
         run: |
           cd dist
-          ..\kachina-builder.exe pack -c ..\Build\kachina.config.json -o BetterGI/BetterGI.update.exe
+          ..\kachina-builder.exe pack -c ..\Build\kachina.config.json -t ..\Build\kachina\left.webp --icon ..\Build\kachina\icon.ico -o BetterGI/BetterGI.update.exe
       # 打包上传
       - name: 📦 Generate archive
         run: |
@@ -307,7 +307,12 @@ jobs:
         run: |
           cd dist
           ..\kachina-builder.exe gen -j 6 -i BetterGI -m metadata.json -o hashed -r babalae/bettergi -t ${{ needs.validate.outputs.version }} --diff-vers ..\last\BetterGI --diff-vers ..\2nd\BetterGI --diff-vers ..\3rd\BetterGI --diff-ignore *[.txt,.onnx] -u .\BetterGI\BetterGI.update.exe
-          ..\kachina-builder.exe pack -c ../Build/kachina.config.json -m metadata.json -d hashed -o BetterGI.Install.${{ needs.validate.outputs.version }}.exe
+          ..\kachina-builder.exe pack -c ..\Build\kachina.config.json -t ..\Build\kachina\left.webp --icon ..\Build\kachina\icon.ico -m metadata.json -d hashed -o BetterGI.Install.${{ needs.validate.outputs.version }}.exe
+      - name: ✂️ Split installer for DFS2
+        if: ${{ github.event.inputs.kachina-channel == 'dev' }}
+        run: |
+          cd dist
+          ..\kachina-builder.exe split -i BetterGI.Install.${{ needs.validate.outputs.version }}.exe -o split -n ${{ needs.validate.outputs.version }}
       - uses: actions/upload-artifact@v4
         with:
           name: BetterGI_Install
@@ -316,6 +321,11 @@ jobs:
         with:
           name: BetterGI_OnlineInst
           path: dist/BetterGI/BetterGI.update.exe
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.event.inputs.kachina-channel == 'dev' }}
+        with:
+          name: BetterGI_Split
+          path: dist/split
 
   build_setup:
     runs-on: windows-latest

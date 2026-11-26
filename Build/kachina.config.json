@@ -3,13 +3,13 @@
     {
       "id": "dfs",
       "name": "Steambird",
-      "uri": "dfs2+packed+https://bgi-ota.cocogoat.cn/resource/BetterGI.Install.exe",
+      "uri": "dfs2+packed+https://bgi-ota.cocogoat.cn/resource/bettergi",
       "icon": "<svg viewBox=\"0 0 48 48\"><g fill=\"none\"><path stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"4\" d=\"m9 14-5 6.07S5.85 27.035 11 32c9.89 9.533 24.334 3.303 30-1 5.357-4.37 2.717-5.332 1-5l-5 1c9.065-14.301 6.575-15.828 4-15l-9 4c-5.769 3.177-8.5 1.5-10 0l-3-3c-4.5-4-8.97-.16-10 1\"/><circle cx=\"14\" cy=\"20\" r=\"2\" fill=\"currentColor\"/></g></svg>"
     },
     {
       "id": "dfs-alpha",
       "name": "测试版",
-      "uri": "dfs2+packed+https://bgi-ota.cocogoat.cn/resource/BetterGI.Alpha.exe",
+      "uri": "dfs2+packed+https://bgi-ota.cocogoat.cn/resource/bettergi-alpha",
       "hidden": true
     },
     {
