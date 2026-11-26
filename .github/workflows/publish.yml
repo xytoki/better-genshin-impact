@@ -306,8 +306,41 @@ jobs:
       - name: 📦 Pack kachina-builder
         run: |
           cd dist
+          $swGen = [System.Diagnostics.Stopwatch]::StartNew()
           ..\kachina-builder.exe gen -j 6 -i BetterGI -m metadata.json -o hashed -r babalae/bettergi -t ${{ needs.validate.outputs.version }} --diff-vers ..\last\BetterGI --diff-vers ..\2nd\BetterGI --diff-vers ..\3rd\BetterGI --diff-ignore *[.txt,.onnx] -u .\BetterGI\BetterGI.update.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $swGen.Stop()
+          Write-Host "gen elapsed: $($swGen.Elapsed.TotalSeconds.ToString('F2'))s"
+          $swPack = [System.Diagnostics.Stopwatch]::StartNew()
           ..\kachina-builder.exe pack -c ../Build/kachina.config.json -m metadata.json -d hashed -o BetterGI.Install.${{ needs.validate.outputs.version }}.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $swPack.Stop()
+          Write-Host "pack elapsed: $($swPack.Elapsed.TotalSeconds.ToString('F2'))s"
+      - name: ✂️ Split installer for DFS2
+        if: ${{ github.event.inputs.kachina-channel == 'dev' }}
+        run: |
+          cd dist
+          $exe = "BetterGI.Install.${{ needs.validate.outputs.version }}.exe"
+          $sw = [System.Diagnostics.Stopwatch]::StartNew()
+          ..\kachina-builder.exe split -i $exe -o split -n ${{ needs.validate.outputs.version }}
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $sw.Stop()
+          $jsonPath = "split\${{ needs.validate.outputs.version }}.json"
+          $doc = Get-Content $jsonPath -Raw | ConvertFrom-Json
+          $casFiles = Get-ChildItem "split\cas" -File
+          $casBytes = ($casFiles | Measure-Object -Property Length -Sum).Sum
+          $exeBytes = (Get-Item $exe).Length
+          $jsonBytes = (Get-Item $jsonPath).Length
+          Write-Host "split elapsed: $($sw.Elapsed.TotalSeconds.ToString('F2'))s"
+          Write-Host "full exe: $exeBytes bytes ($([math]::Round($exeBytes / 1MB, 2)) MB)"
+          Write-Host "manifest json: $jsonBytes bytes, installer_end=$($doc.installer_end), size=$($doc.size)"
+          Write-Host "extents: $($doc.extents.Count), cas files: $($casFiles.Count), cas total: $casBytes bytes ($([math]::Round($casBytes / 1MB, 2)) MB)"
+          Write-Host "data_split_hint windows: $($doc.metadata.data_split_hint.Count)"
+          Write-Host "metadata hashed: $($doc.metadata.hashed.Count), patches: $($doc.metadata.patches.Count)"
+          ..\kachina-builder.exe extract -i $exe -f extracted.config.json -n '\0CONFIG'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Write-Host "=== Extracted \0CONFIG ==="
+          Get-Content extracted.config.json
       - uses: actions/upload-artifact@v4
         with:
           name: BetterGI_Install
@@ -316,6 +349,11 @@ jobs:
         with:
           name: BetterGI_OnlineInst
           path: dist/BetterGI/BetterGI.update.exe
+      - uses: actions/upload-artifact@v4
+        if: ${{ github.event.inputs.kachina-channel == 'dev' }}
+        with:
+          name: BetterGI_Split
+          path: dist/split
 
   build_setup:
     runs-on: windows-latest
